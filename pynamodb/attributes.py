@@ -8,7 +8,7 @@ from delorean import Delorean, parse
 from boto.dynamodb.types import Dynamizer
 from pynamodb.constants import (
     STRING, NUMBER, BINARY, UTC, DATETIME_FORMAT, BINARY_SET, STRING_SET, NUMBER_SET,
-    DEFAULT_ENCODING, LIST
+    DEFAULT_ENCODING, LIST, ATTR_TYPE_MAP
 )
 
 dynamizer = Dynamizer()
@@ -73,21 +73,16 @@ class SetMixin(object):
         Because dynamodb doesn't store empty attributes,
         empty sets return None
         """
-        if value is not None:
-            try:
-                iter(value)
-            except TypeError:
-                value = [value]
-            if len(value):
-                return [json.dumps(val) for val in sorted(value)]
-        return None
+        if len(value):
+            return dynamizer.encode(value).values()[0]
 
     def deserialize(self, value):
         """
         Deserializes a set
         """
         if value and len(value):
-            return set([json.loads(val) for val in value])
+            attr_type = ATTR_TYPE_MAP[self.attr_type]
+            return dynamizer.decode({attr_type: value})
 
 
 class ListAttribute(Attribute):
