@@ -7,7 +7,7 @@ from base64 import b64encode, b64decode
 from delorean import Delorean, parse
 from pynamodb.constants import (
     STRING, NUMBER, BINARY, UTC, DATETIME_FORMAT, BINARY_SET, STRING_SET, NUMBER_SET,
-    DEFAULT_ENCODING
+    DEFAULT_ENCODING, LIST
 )
 
 
@@ -85,6 +85,28 @@ class SetMixin(object):
         """
         if value and len(value):
             return set([json.loads(val) for val in value])
+
+
+class ListAttribute(Attribute):
+
+    attr_type = LIST
+    null = True
+
+    def serialize(self, value):
+        print 'serialize', value
+        if value is not None:
+            try:
+                iter(value)
+            except TypeError:
+                value = [value]
+            if len(value):
+                return [dict(S=val) for val in value]
+        return None
+
+    def deserialize(self, value):
+        print 'deserialize', value
+        if value and len(value):
+            return list(value)
 
 
 class BinaryAttribute(Attribute):
