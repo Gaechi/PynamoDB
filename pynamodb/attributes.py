@@ -5,10 +5,13 @@ import six
 import json
 from base64 import b64encode, b64decode
 from delorean import Delorean, parse
+from boto.dynamodb.types import Dynamizer
 from pynamodb.constants import (
     STRING, NUMBER, BINARY, UTC, DATETIME_FORMAT, BINARY_SET, STRING_SET, NUMBER_SET,
     DEFAULT_ENCODING, LIST
 )
+
+dynamizer = Dynamizer()
 
 
 class Attribute(object):
@@ -93,20 +96,18 @@ class ListAttribute(Attribute):
     null = True
 
     def serialize(self, value):
-        print 'serialize', value
         if value is not None:
             try:
                 iter(value)
             except TypeError:
                 value = [value]
             if len(value):
-                return [dict(S=val) for val in value]
+                return [dynamizer.encode(val) for val in value]
         return None
 
     def deserialize(self, value):
-        print 'deserialize', value
         if value and len(value):
-            return list(value)
+            return [dynamizer.decode(val) for val in value]
 
 
 class BinaryAttribute(Attribute):
